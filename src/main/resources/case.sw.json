@@ -1,0 +1,20 @@
+{
+  "id": "Case",
+  "version": "1.0",
+  "name": "Case",
+  "description": "Case",
+  "start": "Wait",
+  "events": [{
+    "name": "completed",
+    "source": "completed",
+    "type": "completed"
+  }],
+  "states": [
+    {
+      "name": "Wait",
+      "type": "callback",
+      "eventRef": "completed",
+      "end": true
+    }
+  ]
+}

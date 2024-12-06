@@ -1,0 +1,28 @@
+{
+    "identifier": "ITEM-0001",
+    "request": "Why has my item not been delivered yet?"
+}
+
+{
+    "request": "Can you notify all users that have an item that is being shipped through Liege that their package will be delayed by 2 days?"
+}
+
+ * It's not late
+ * Payment pending
+ * Item was no longer in stock
+ * Shipping delayed
+ * Package resent
+ * ...
+
+neo4j
+
+#List all nodes and connections
+Match (n)-[r]->(m)
+Return n,r,m
+
+# Delete all nodes:
+MATCH (n) DETACH DELETE n v
+
+CREATE (item1:Item {name: 'Lightbulb', price: 3.99, expectedDelivery: '2024-10-25', paymentStatus: 'Fully paid'}), (user1:User {name: 'John Mayor'}), (shipment1:Shipment {identifier: 'FEDEX-002934', carrier: 'Fedex'}), (location1:Location {name: 'Eurodisney'}), (location2:Location {name: 'Keerbergen'}), (location3:Location {name: 'Paris'}), (location4:Location {name: 'Liege'}), (item2:Item {name: 'TV', price: 299, paymentStatus: 'Payment pending'}), (user2:User {name: 'Frank Defour'}), (item3:Item {name: 'Automatic Garden Robot', price: 499, expectedDelivery: '2024-10-19', paymentStatus: 'Fully paid'}), (user3:User {name: 'Elisa Li'}), (shipment2:Shipment {identifier: 'DHL-0032984', carrier: 'DHL'}), (location5:Location {name: 'Amsterdam'}), (location6:Location {name: 'Antwerp'}), (item1)-[:SHIPPED_BY]->(shipment1), (item3)-[:SHIPPED_BY]->(shipment2), (shipment1)-[:DEPARTS_AT]->(location1), (shipment1)-[:ARRIVES_AT]->(location2), (shipment1)-[:PASSES_THROUGH]->(location3), (shipment1)-[:PASSES_THROUGH]->(location4), (shipment2)-[:DEPARTS_AT]->(location5), (shipment2)-[:ARRIVES_AT]->(location2), (shipment2)-[:PASSES_THROUGH]->(location6), (user1)-[:PURCHASED]->(item1), (user2)-[:PURCHASED]->(item2), (user3)-[:PURCHASED]->(item3)
+
+MATCH (user:User)-[:PURCHASED]->(item:Item)-[:SHIPPED_BY]->(shipment:Shipment)-[:PASSES_THROUGH]->(location:Location {name: 'Liege'}) RETURN user, item

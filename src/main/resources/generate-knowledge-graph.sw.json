@@ -1,0 +1,139 @@
+{
+  "id": "GenerateKnowledgeGraph",
+  "version": "1.0",
+  "name": "GenerateKnowledgeGraph",
+  "description": "GenerateKnowledgeGraph",
+  "start": "GetPurchases",
+  "functions": [
+    {
+      "name": "createChatCompletion",
+      "operation": "specs/openai.yaml#createChatCompletion"
+    },
+    {
+      "name": "getPurchases",
+      "operation": "specs/self.yaml#getPurchases"
+    },
+    {
+      "name": "logMessage",
+      "operation": "specs/self.yaml#logMessage"
+    },
+    {
+      "name": "getShipments",
+      "operation": "specs/self.yaml#getShipments"
+    },
+    {
+      "name": "getGraphContext",
+      "operation": "specs/graph.yaml#commit"
+    }
+  ],
+  "events": [{
+    "name": "request",
+    "source": "request",
+    "type": "request"
+  }],
+  "states": [
+    {
+      "name": "GetPurchases",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Purchases",
+          "functionRef": {
+            "refName": "getPurchases"
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .purchases }"
+          }
+        }
+      ],
+      "transition": "GetShipments"
+    },
+    {
+      "name": "GetShipments",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Shipments",
+          "functionRef": {
+            "refName": "getShipments"
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .shipments }"
+          }
+        }
+      ],
+      "transition": "PreparePrompt"
+    },
+    {
+      "name": "PreparePrompt",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Prepare Prompt",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"Given the following purchases: \\(.purchases) \\n\\nAnd given the following shipments: \\(.shipments) \\n\\nCan you generate Neo4J statements that turn this input into a knowledge graph, using the nodes Item, User, Location and Shipment and relations PURCHASED, SHIPPED_BY, DEPARTS_AT, ARRIVES_AT and PASSES_THROUGH.  Generate one comma-separated Neo4j CREATE statement.  Return as JSON object with property 'statement'.\\n\\n\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .prompt }"
+          }
+        }
+      ],
+      "transition": "CallLLM"
+    },
+    {
+      "name": "CallLLM",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Call LLM",
+          "functionRef": {
+            "refName": "createChatCompletion",
+            "arguments": {
+              "model": "gpt-4o",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "\"\\(.prompt)\""
+                }
+              ],
+              "response_format": {
+                "type": "json_object"
+              }
+            }
+          },
+          "actionDataFilter": {
+            "results": "${ .choices[0].message }",
+            "toStateData": "${ .response }"
+          }
+        }
+      ],
+      "transition": "StoreResponse"
+    },
+    {
+      "name": "StoreResponse",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Store Response",
+          "functionRef": {
+            "refName": "getGraphContext",
+            "arguments": {
+              "statements": [
+                {
+                  "statement": "\"\\(.response.content | fromjson.statement)\""
+                }
+              ]
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .output }"
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

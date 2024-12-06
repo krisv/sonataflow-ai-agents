@@ -1,0 +1,149 @@
+{
+  "id": "EventOrchestration",
+  "version": "1.0",
+  "name": "EventOrchestration",
+  "description": "EventOrchestration",
+  "start": "Request",
+  "functions": [
+    {
+      "name": "createChatCompletion",
+      "operation": "specs/openai.yaml#createChatCompletion"
+    },
+    {
+      "name": "getPurchase",
+      "operation": "specs/self.yaml#getPurchase"
+    },
+    {
+      "name": "getInstruction",
+      "operation": "specs/self.yaml#getInstruction"
+    },
+    {
+      "name": "logMessage",
+      "operation": "specs/self.yaml#logMessage"
+    },
+    {
+      "name": "executeFunction",
+      "operation": "specs/self.yaml#executeFunction"
+    }
+  ],
+  "events": [{
+    "name": "request",
+    "source": "request",
+    "type": "request"
+  }],
+  "states": [
+    {
+      "name": "Request",
+      "type": "event",
+      "onEvents": [
+        {
+          "eventRefs": ["request"],
+          "actions": []
+        }
+      ],
+      "transition": "GetPurchase"
+    },
+    {
+      "name": "GetPurchase",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Purchase",
+          "functionRef": {
+            "refName": "getPurchase",
+            "arguments": {
+              "identifier": "\"\\(.identifier)\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .purchase }"
+          }
+        }
+      ],
+      "transition": "GetInstruction"
+    },
+    {
+      "name": "GetInstruction",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Instruction",
+          "functionRef": {
+            "refName": "getInstruction",
+            "arguments": {
+              "topic": "Check Late Delivery"
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .instruction }"
+          }
+        }
+      ],
+      "transition": "PreparePrompt"
+    },
+    {
+      "name": "PreparePrompt",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Prepare Prompt",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"Start with this online item purchase: \\(.purchase) \\n\\nFollow these and only these instruction precisely: \\(.instruction) \\nCurrent date is November 22nd, 2024.  \\n\\nNow give a short response to the following question: \\(.request) \\n\\n\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .prompt }"
+          }
+        }
+      ],
+      "transition": "CallLLM"
+    },
+    {
+      "name": "CallLLM",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Call Mistral LLM",
+          "functionRef": {
+            "refName": "createChatCompletion",
+            "arguments": {
+              "model": "gpt-4o",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "\"\\(.prompt)\""
+                }
+              ]
+            }
+          },
+          "actionDataFilter": {
+            "results": "${ .choices[0].message }",
+            "toStateData": "${ .response }"
+          }
+        }
+      ],
+      "transition": "StoreResponse"
+    },
+    {
+      "name": "StoreResponse",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Store Response",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"\\(.response.content)\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .user_response }"
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

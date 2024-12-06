@@ -1,0 +1,52 @@
+---
+openapi: 3.0.3
+info:
+  title: Neo4j Graph Database
+  description: Neo4j Graph Database
+  version: 1.0.0-SNAPSHOT
+servers:
+  - url: http://localhost:7474/
+    description: Local Neo4j Graph Database
+paths:
+  /db/neo4j/tx/commit:
+    post:
+      operationId: commit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Statements'
+      responses:
+        "200":
+          description: Generated Text"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Results'
+components:
+  schemas:
+    Statements:
+      type: object
+      properties:
+        statements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Statement'
+    Statement:
+      type: object
+      properties:
+        statement:
+           type: string
+    Results:
+      type: string
+    #  type: object
+    #  properties:
+    #    result:
+    #      type: array
+    #      items:
+    #        $ref: '#/components/schemas/Result'
+    #Result:
+    #  type: object
+    #  properties:
+    #    data:
+    #      type: object

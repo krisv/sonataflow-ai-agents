@@ -1,0 +1,131 @@
+{
+  "id": "UpdateInstruction",
+  "version": "1.0",
+  "name": "UpdateInstruction",
+  "description": "UpdateInstruction",
+  "start": "GetInstruction",
+  "functions": [
+    {
+      "name": "createChatCompletion",
+      "operation": "specs/openai.yaml#createChatCompletion"
+    },
+    {
+      "name": "getFeedback",
+      "operation": "specs/self.yaml#getFeedback"
+    },
+    {
+      "name": "logMessage",
+      "operation": "specs/self.yaml#logMessage"
+    },
+    {
+      "name": "getInstruction",
+      "operation": "specs/self.yaml#getInstruction"
+    },
+    {
+      "name": "setInstruction",
+      "operation": "specs/self.yaml#setInstruction"
+    }
+  ],
+  "states": [
+    {
+      "name": "GetInstruction",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Instruction",
+          "functionRef": {
+            "refName": "getInstruction",
+            "arguments": {
+              "topic": "Check Late Delivery"
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .instruction }"
+          }
+        }
+      ],
+      "transition": "GetFeedback"
+    },
+    {
+      "name": "GetFeedback",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Feedback",
+          "functionRef": {
+            "refName": "getFeedback",
+            "arguments": {
+              "topic": "Check Late Delivery"
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .feedback }"
+          }
+        }
+      ],
+      "transition": "PreparePrompt"
+    },
+    {
+      "name": "PreparePrompt",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Prepare Prompt",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"Given this initial instruction: \\(.instruction) \\n\\nCan you rewrite the instructions, including the following feedback as well: \\(.feedback) \\n\\n\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .prompt }"
+          }
+        }
+      ],
+      "transition": "CallLLM"
+    },
+    {
+      "name": "CallLLM",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Call Mistral LLM",
+          "functionRef": {
+            "refName": "createChatCompletion",
+            "arguments": {
+              "model": "gpt-3.5-turbo",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "\"\\(.prompt)\""
+                }
+              ]
+            }
+          },
+          "actionDataFilter": {
+            "results": "${ .choices[0].message.content }",
+            "toStateData": "${ .response }"
+          }
+        }
+      ],
+      "transition": "SetInstruction"
+    },
+    {
+      "name": "SetInstruction",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Set Instruction",
+          "functionRef": {
+            "refName": "setInstruction",
+            "arguments": {
+              "topic": "Check Late Delivery",
+              "instruction": "\"\\(.response)\""
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "id": "Notification",
+  "version": "1.0",
+  "name": "Notification",
+  "description": "Notification",
+  "start": "Request",
+  "functions": [
+    {
+      "name": "createChatCompletion",
+      "operation": "specs/openai.yaml#createChatCompletion"
+    },
+    {
+      "name": "logMessage",
+      "operation": "specs/self.yaml#logMessage"
+    },
+    {
+      "name": "getGraphContext",
+      "operation": "specs/graph.yaml#commit"
+    }
+  ],
+  "events": [{
+    "name": "notification",
+    "source": "notification",
+    "type": "notification"
+  }],
+  "states": [
+    {
+      "name": "Request",
+      "type": "event",
+      "onEvents": [
+        {
+          "eventRefs": ["notification"],
+          "actions": []
+        }
+      ],
+      "transition": "PreparePrompt"
+    },
+    {
+      "name": "PreparePrompt",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Prepare Prompt",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"Given a Neo4j graph using the nodes Item, User, Location and Shipment and relations PURCHASED, SHIPPED_BY, DEPARTS_AT, ARRIVES_AT and PASSES_THROUGH. \\n\\nGenerate a query that returns all user names and their item names that match the following request: \\(.request) \\n\\nReturn as JSON object with as string property 'query' the Neo4j query to execute.\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .prompt }"
+          }
+        }
+      ],
+      "transition": "CallLLM"
+    },
+    {
+      "name": "CallLLM",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Call LLM",
+          "functionRef": {
+            "refName": "createChatCompletion",
+            "arguments": {
+              "model": "gpt-4o",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "\"\\(.prompt)\""
+                }
+              ],
+              "response_format": {
+                "type": "json_object"
+              }
+            }
+          },
+          "actionDataFilter": {
+            "results": "${ .choices[0].message }",
+            "toStateData": "${ .response }"
+          }
+        }
+      ],
+      "transition": "GetResults"
+    },
+    {
+      "name": "GetResults",
+      "type": "operation",
+      "actions": [
+        {
+          "name": "Get Results",
+          "functionRef": {
+            "refName": "getGraphContext",
+            "arguments": {
+              "statements": [
+                {
+                  "statement": "\"\\(.response.content | fromjson.query)\""
+                }
+              ]
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .output }"
+          }
+        }
+      ],
+      "transition": "SendEmails"
+    },
+    {
+      "name": "SendEmails",
+      "type": "foreach",
+      "iterationParam" : "item",
+      "inputCollection": ".output.results[0].data",
+      "outputCollection": ".emails",
+      "actions": [
+        {
+          "name": "Prepare Prompt Email",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": "\"Given a user has bought the given item: \\(.item) \\n\\nGenerate an email from Tom at the Support department of company BetterShipping that will notify the user of the following request: \\(.request).\""
+            }
+          },
+          "actionDataFilter": {
+            "toStateData": "${ .promptEmail }"
+          }
+        },
+        {
+          "name": "Call LLM Email",
+          "functionRef": {
+            "refName": "createChatCompletion",
+            "arguments": {
+              "model": "gpt-4o",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "\"\\(.promptEmail)\""
+                }
+              ]
+            }
+          },
+          "actionDataFilter": {
+            "results": "${ .choices[0].message }",
+            "toStateData": "${ .email }"
+          }
+        },
+        {
+          "name": "printAction",
+          "functionRef": {
+            "refName": "logMessage",
+            "arguments": {
+              "message": ".email.content"
+            }
+          }
+        }
+      ],
+      "end": true
+    }
+  ]
+}

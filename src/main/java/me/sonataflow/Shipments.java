@@ -3,13 +3,10 @@ package me.sonataflow;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 
 @Path("/shipments")
 public class Shipments {
@@ -25,7 +22,6 @@ public class Shipments {
 
     @Path("/shipment/{identifier}")
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
     public String getShipment(@PathParam("identifier") String identifier) {
         String shipment = shipments.get(identifier);
         return shipment;
@@ -33,7 +29,6 @@ public class Shipments {
 
     @Path("/shipments")
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
     public String getShipment() {
         String result = "";
         for (String shipment: shipments.values()) {
@@ -44,7 +39,6 @@ public class Shipments {
 
     @Path("/shipment/{identifier}")
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
     public void setShipment(@PathParam("identifier") String identifier, String shipment) {
         shipments.put(identifier, shipment);
     }

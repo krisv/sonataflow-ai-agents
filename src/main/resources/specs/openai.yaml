@@ -1,17 +1,12 @@
 openapi: 3.0.0
 info:
-    title: OpenAI API
-    description: The OpenAI REST API. Please see https://platform.openai.com/docs/api-reference for more details.
+    title: OpenAI-compatible API
+    description: The OpenAI-compativle REST API
     version: "2.3.0"
-    termsOfService: https://openai.com/policies/terms-of-use
-    contact:
-        name: OpenAI Support
-        url: https://help.openai.com/
-    license:
-        name: MIT
-        url: https://github.com/openai/openai-openapi/blob/master/LICENSE
 servers:
-    - url: https://api.openai.com/v1
+    - url: https://api.openai.com/v1 
+    # For example, when using Ollama, use http://localhost:11434/v1
+    #              when using OpenAI, use https://api.openai.com/v1
 paths:
     # Note: When adding an endpoint, make sure you also add it in the `groups` section, in the end of this file,
     # under the appropriate group

@@ -105,7 +105,7 @@
       "type": "operation",
       "actions": [
         {
-          "name": "Call Mistral LLM",
+          "name": "Call LLM",
           "functionRef": {
             "refName": "createChatCompletion",
             "arguments": {

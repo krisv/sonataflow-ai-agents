@@ -7,21 +7,23 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 
 Make sure you have Java 17+ installed and your JAVA_HOME system property set.
 
-Also update the src/main/resources/application.properties file to include your own OpenAI key.
+To connect the agent to your AI model of choice (using openai-compatible API):
+- update the src/main/resources/application.properties file to include your own OpenAI key.
+- update the URL in src/main/resources/specs/opeai.yaml to the url of your model
 
 You can run your application in dev mode that enables live coding using:
 ```shell script
 ./mvnw quarkus:dev
 ```
 
-After starting up in dev mode, you can access the Dev UI at http://localhost:9000/q/dev/
+After starting up in dev mode, you can access the Dev UI at http://localhost:9000/q/dev-ui/
 
 Locate the Serverless Workflow Tools card and click on Workflow Instances to open up the embedded Serverless Workflow console
 
 ### Agent 101
 
 The first agent can be triggered by sending a 'request' event with the item identifier and a question.
-Click on the Workflow Definitions tab in the central panel, and click the 'Trigger Cloud Event' button.
+Click on the Workflow Definitions tab in the central panel, find the EventOrchestration workflow and click the event network button behind it.
 Fill in 'request' as event type and the following body:
 ```json
 {
@@ -40,7 +42,7 @@ Now go to the Workflow Definitions tab and execute the UpdateInstruction workflo
 The instructions should now be updated.
 
 To allow looking up the shipment information, a new agent is implemented that has access to the shipment service using a tool.
-You can execute the request for 'ITEM-0003' similar to agent 101 but using request2 as event type.
+You can execute the request for 'ITEM-0003' similar to agent 101 but using EventOrchestration2 workflow, with request2 as event type.
 You should notice that agent 102 is now able to handle shipment information as well.
 
 ### Agent 103
@@ -61,7 +63,7 @@ Return n,r,m
 
 ### Agent 104
 The last agent can send out a notification to users, based on the information in the knowledge graph.
-You can trigger the agent by sending a 'notification' event with the following data:
+You can trigger the agent by sending a 'notification' event to the Notification workflow with the following data:
 
 ```json
 {
